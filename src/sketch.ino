@@ -8,6 +8,8 @@
 
 
 volatile int f_wdt=1;
+bool canSleep = true;
+
 /***************************************************
  *  Name:        ISR(WDT_vect)
  *
@@ -21,14 +23,7 @@ volatile int f_wdt=1;
  ***************************************************/
 ISR(WDT_vect)
 {
-	if(f_wdt == 0)
-  	{
-    	f_wdt=1;
-  	}
-  	else
-  	{
-    	Serial.println("WDT Overrun!!!");
-  	}
+	
 }
 
 
@@ -44,7 +39,7 @@ ISR(WDT_vect)
  ***************************************************/
 void enterSleep(void)
 {
-  	set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+  	set_sleep_mode(SLEEP_MODE_PWR_DOWN);   
   	sleep_enable();
   
   	/* Now enter sleep mode. */
@@ -57,6 +52,18 @@ void enterSleep(void)
   	power_all_enable();
 }
 
+
+
+/***************************************************
+ *  Name:        setupWDT
+ *
+ *  Returns:     Nothing.
+ *
+ *  Parameters:  None.
+ *
+ *  Description: Setup registers for sleep activities
+ *
+ ***************************************************/
 void setupWDT(){
 	/*** Setup the WDT ***/
   
@@ -77,10 +84,10 @@ void setupWDT(){
 
 void ping(){
 
-	for(int i=0;i<5;i++){
+	for(int i=0;i<4;i++){
 		digitalWrite(LED_PIN, HIGH);
-    	delay(300);
-    	digitalWrite(LED_PIN, LOW);
+	    	delay(300);
+    		digitalWrite(LED_PIN, LOW);
 		delay(200);
 	}
 
@@ -88,7 +95,11 @@ void ping(){
 
 void setup()
 {
+
+	digitalWrite(LED_PIN, HIGH);
+	delay(5000);//waits 5 secs to be programmed
 	Serial.begin(9600);	
+
    	pinMode(LED_PIN,OUTPUT);      // set pin 13 as an output so we can use LED to monitor
 
 	Serial.println("setup start");
@@ -98,27 +109,19 @@ void setup()
 
 	Serial.println("setup done");
 	delay(100);
+	
+	digitalWrite(LED_PIN,LOW);
+
 }
 
 void loop()
 {
 	Serial.println("loop start");
-	
-	if(f_wdt == 1)
-  	{
-    	/* Toggle the LED */
-   		ping();
- 
-    	/* Don't forget to clear the flag. */
-    	f_wdt = 0;
-    
-    	/* Re-enter sleep mode. */
-    	enterSleep();
-  	}
-  	else
-  	{
-    	/* Do nothing. */
-  	}
-	
+	ping();
+
+	if(canSleep){ 
+	    	enterSleep();
+	}
+
 	Serial.println("loop end");
 }
