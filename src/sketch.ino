@@ -4,22 +4,33 @@
 #include <avr/io.h>
 
 
+#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal.h>
+#include <Wire.h> 
+
+//STATUS LED, BUILT-IN
 #define LED_PIN 13
 
 
 volatile int f_wdt=1;
 bool canSleep = true;
 
-/***************************************************
+/****************************************************************
+I2C Addresses
+0x27	--> I2C_LCD module
+****************************************************************/
+#define I2C_LCD_ADDR
+
+
+//I2C_LCD comm variable
+LiquidCrystal_I2C lcd(I2C_LCD_ADDR, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
+
+***************************************************
  *  Name:        ISR(WDT_vect)
- *
  *  Returns:     Nothing.
- *
  *  Parameters:  None.
- *
  *  Description: Watchdog Interrupt Service. This
  *               is executed when watchdog timed out.
- *
  ***************************************************/
 ISR(WDT_vect)
 {
@@ -29,13 +40,9 @@ ISR(WDT_vect)
 
 /***************************************************
  *  Name:        enterSleep
- *
  *  Returns:     Nothing.
- *
  *  Parameters:  None.
- *
  *  Description: Enters the arduino into sleep mode.
- *
  ***************************************************/
 void enterSleep(void)
 {
@@ -56,28 +63,20 @@ void enterSleep(void)
 
 /***************************************************
  *  Name:        setupWDT
- *
  *  Returns:     Nothing.
- *
  *  Parameters:  None.
- *
  *  Description: Setup registers for sleep activities
- *
  ***************************************************/
 void setupWDT(){
 	/*** Setup the WDT ***/
-  
   	/* Clear the reset flag. */
   	MCUSR &= ~(1<<WDRF);
-  
   	/* In order to change WDE or the prescaler, we need to
    	 * set WDCE (This will allow updates for 4 clock cycles).
    	 */
   	WDTCSR |= (1<<WDCE) | (1<<WDE);
-
   	/* set new watchdog timeout prescaler value */
   	WDTCSR = 1<<WDP0 | 1<<WDP3; /* 8.0 seconds */
-  
   	/* Enable the WD interrupt (note no reset). */
   	WDTCSR |= _BV(WDIE);
 }
@@ -86,13 +85,9 @@ void setupWDT(){
 
 /***************************************************
  *  Name:        ping
- *
  *  Returns:     Nothing.
- *
  *  Parameters:  None.
- *
  *  Description: Hearth beat blink
- *
  ***************************************************/
 void ping(){
 
@@ -117,25 +112,74 @@ void ping(){
 
 }
 
+/***************************************************
+ *  Name:        setupLCD
+ *  Returns:     Nothing.
+ *  Parameters:  None.
+ *  Description: setup lcd screen
+ ***************************************************/
+void setupLCD(){
+	lcd.begin(16,2);   // initialize the lcd for 16 chars 2 lines, turn on backlight
+	// ------- Quick 3 blinks of backlight  -------------
+  	for(int i = 0; i< 3; i++)
+  	{
+    		lcd.backlight();
+    		delay(250);
+    		lcd.noBacklight();
+    		delay(250);
+  	}
+
+}
+
+/***************************************************
+ *  Name:        setupSystems
+ *  Returns:     Nothing.
+ *  Parameters:  None.
+ *  Description: Setup different sub systems
+ ***************************************************/
+void setupSystems(){
+	//Serial
+	Serial.begin(9600);	
+
+	//WDT
+	setupWDT();
+
+	//LCD
+	setupLCD();
+}
+
+
+/***************************************************
+ *  Name:        log
+ *  Returns:     Nothing.
+ *  Parameters:  msg to log.
+ *  Description: logs to serial if available
+ ***************************************************/
+void log(char* msg){
+	if(Serial){
+		Serial.println(msg);
+		delay(100);
+	}
+	//TODO?
+/*
+	else{Serial.begin(9600);}
+*/
+}
+
 void setup()
 {
 
+	//LED Monitor
+   	pinMode(LED_PIN,OUTPUT);
 	digitalWrite(LED_PIN, HIGH);
-	delay(5000);//waits 5 secs to be programmed
-	Serial.begin(9600);	
-
-   	pinMode(LED_PIN,OUTPUT);      // set pin 13 as an output so we can use LED to monitor
-
-	Serial.println("setup start");
-	delay(100);
-
-	setupWDT();
-
-	Serial.println("setup done");
-	delay(100);
-	
+	delay(5000);//waits 5 secs to be programmed without issues
 	digitalWrite(LED_PIN,LOW);
 
+	setupSystems();
+
+	log("setup done");
+	ping();
+	
 }
 
 void loop()
