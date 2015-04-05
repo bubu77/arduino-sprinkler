@@ -82,14 +82,37 @@ void setupWDT(){
   	WDTCSR |= _BV(WDIE);
 }
 
+
+
+/***************************************************
+ *  Name:        ping
+ *
+ *  Returns:     Nothing.
+ *
+ *  Parameters:  None.
+ *
+ *  Description: Hearth beat blink
+ *
+ ***************************************************/
 void ping(){
 
-	for(int i=0;i<4;i++){
-		digitalWrite(LED_PIN, HIGH);
-	    	delay(300);
-    		digitalWrite(LED_PIN, LOW);
-		delay(200);
-	}
+	digitalWrite(LED_PIN, HIGH);
+    	delay(100);
+	digitalWrite(LED_PIN, LOW);
+	delay(200);
+	digitalWrite(LED_PIN, HIGH);
+    	delay(100);
+	digitalWrite(LED_PIN, LOW);
+	delay(300);
+
+	digitalWrite(LED_PIN, HIGH);
+    	delay(100);
+	digitalWrite(LED_PIN, LOW);
+	delay(200);
+	digitalWrite(LED_PIN, HIGH);
+    	delay(100);
+	digitalWrite(LED_PIN, LOW);
+	delay(100);
 
 }
 
