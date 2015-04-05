@@ -7,6 +7,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <LiquidCrystal.h>
 #include <Wire.h> 
+#include <LCD.h>
 
 //STATUS LED, BUILT-IN
 #define LED_PIN 13
@@ -19,13 +20,13 @@ bool canSleep = true;
 I2C Addresses
 0x27	--> I2C_LCD module
 ****************************************************************/
-#define I2C_LCD_ADDR
+#define I2C_LCD_ADDR 0x27
 
 
 //I2C_LCD comm variable
 LiquidCrystal_I2C lcd(I2C_LCD_ADDR, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
-***************************************************
+/***************************************************
  *  Name:        ISR(WDT_vect)
  *  Returns:     Nothing.
  *  Parameters:  None.
@@ -101,15 +102,6 @@ void ping(){
 	delay(300);
 
 
-	digitalWrite(LED_PIN, HIGH);
-    	delay(100);
-	digitalWrite(LED_PIN, LOW);
-	delay(200);
-	digitalWrite(LED_PIN, HIGH);
-    	delay(100);
-	digitalWrite(LED_PIN, LOW);
-	delay(100);
-
 }
 
 /***************************************************
@@ -120,15 +112,6 @@ void ping(){
  ***************************************************/
 void setupLCD(){
 	lcd.begin(16,2);   // initialize the lcd for 16 chars 2 lines, turn on backlight
-	// ------- Quick 3 blinks of backlight  -------------
-  	for(int i = 0; i< 3; i++)
-  	{
-    		lcd.backlight();
-    		delay(250);
-    		lcd.noBacklight();
-    		delay(250);
-  	}
-
 }
 
 /***************************************************
@@ -182,14 +165,27 @@ void setup()
 	
 }
 
+int counter=1;
 void loop()
 {
-	Serial.println("loop start");
+	log("loop start");
 	ping();
+
+	lcd.display();
+
+	lcd.setCursor(0,0); 
+  	lcd.print("Current value: ");
+	lcd.setCursor(0,1);
+	lcd.print(counter++);
+	
+	delay(1000);
+
+	lcd.noDisplay();
+
+	log("loop end");
 
 	if(canSleep){ 
 	    	enterSleep();
 	}
 
-	Serial.println("loop end");
 }
