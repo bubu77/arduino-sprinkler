@@ -12,6 +12,9 @@
 //STATUS LED, BUILT-IN
 #define LED_PIN 13
 
+//how often we shoudl wake up? N ==> N*8s
+#define SLEEP_SCALER 8
+
 
 volatile int f_wdt=1;
 bool canSleep = true;
@@ -112,6 +115,7 @@ void ping(){
  ***************************************************/
 void setupLCD(){
 	lcd.begin(16,2);   // initialize the lcd for 16 chars 2 lines, turn on backlight
+	lcd.noBacklight();
 }
 
 /***************************************************
@@ -165,24 +169,35 @@ void setup()
 	
 }
 
-int counter=1;
+byte sleepCounter = SLEEP_SCALER;
+byte counter=1;
+
 void loop()
 {
-	log("loop start");
-	ping();
 
-	lcd.display();
+	if(sleepCounter-- <1)	{
+		//this code is the loop working part
 
-	lcd.setCursor(0,0); 
-  	lcd.print("Current value: ");
-	lcd.setCursor(0,1);
-	lcd.print(counter++);
+		log("loop start");
+		ping();
+
+		lcd.display();
+
+		lcd.setCursor(0,0); 
+  		lcd.print("Current value: ");
+		lcd.setCursor(0,1);
+		lcd.print(counter++);
 	
-	delay(1000);
+		delay(1000);
 
-	lcd.noDisplay();
+//		lcd.noDisplay();
 
-	log("loop end");
+		log("loop end");
+
+
+
+		sleepCounter=SLEEP_SCALER;
+	}
 
 	if(canSleep){ 
 	    	enterSleep();
