@@ -26,28 +26,20 @@ I2C Addresses
 #define I2C_LCD_ADDR 0x27
 
 
-byte smiley[8] = {
-  B00000,
-  B10001,
-  B00000,
-  B00000,
-  B10001,
-  B01110,
-  B00000,
-};
-
 
 //I2C_LCD comm variable
 LiquidCrystal_I2C lcd(I2C_LCD_ADDR, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
 //sleep variables
-byte sleepCounter = SLEEP_SCALER;
+byte sleepCounter = 0;
 byte counter=1;
 bool canSleep = true;
 
 //sensors reading variables
 int moistSens=0;
 
+//pump on Flag
+bool pumpOn = false;
 
 /***************************************************
  *  Name:        ISR(WDT_vect)
@@ -208,21 +200,36 @@ void setup()
 /***************************************************
  *  Name:        showStatus
  *  Returns:     Nothing.
- *  Parameters:  msg to log.
+ *  Parameters:  none.
  *  Description: print current status to lcd monitor
  ***************************************************/
 void readSensors(){
-
+	//MOIST
+	//perform multiple reads and use avg
+	int tests = 5;
+	moistSens = 0;
         digitalWrite(MOIST_PIN_POWER, HIGH);
-	delay(200);
-	moistSens=analogRead(MOIST_PIN_SENS);
-        digitalWrite(MOIST_PIN_POWER, LOW);
+	delay(1000);
+	for(int i=0;i<tests;i++){
+		int curr = analogRead(MOIST_PIN_SENS);
+		moistSens+= curr;
+//		Serial.println(curr);
+//		Serial.println(moistSens);
+		delay(200);		
+	}
+
+//	Serial.println("---");
+	moistSens=moistSens/tests;	        
+//	Serial.println(moistSens);
+//	Serial.println("---");
+
+	digitalWrite(MOIST_PIN_POWER, LOW);
 
 }
 /***************************************************
  *  Name:        showStatus
  *  Returns:     Nothing.
- *  Parameters:  msg to log.
+ *  Parameters:  none.
  *  Description: print current status to lcd monitor
  ***************************************************/
 void showStatus(){
@@ -236,23 +243,45 @@ void showStatus(){
 		//pump R2[P0]
 		lcd.setCursor(0,1);
 		lcd.print("P");
-		lcd.setCursor(1,1);
-		lcd.print("-");
+//		lcd.setCursor(1,1);
+//		lcd.print("-");
+		if(pumpOn){
+			lcd.blink();
+		}else{
+			lcd.noBlink();
+		}
 
+}
+
+
+/***************************************************
+ *  Name:        applyLogic
+ *  Returns:     Nothing.
+ *  Parameters:  none.
+ *  Description: evaluate current sensor data and prepares
+		 variables for actuators
+ ***************************************************/
+void applyLogic(){
+	if(moistSens < 100){
+		pumpOn = true;
+	}else{
+		pumpOn = false;
+	}
 }
 
 void loop()
 {
+	canSleep = false;
 
 	if(sleepCounter-- <1)	{
 		//this code is the loop working part
 		ping();
 
 		readSensors();
-
+		applyLogic();
 		lcd.display();
 		showStatus();
-		delay(1000);
+
 
 		//turn off display
 //		lcd.noDisplay();
