@@ -243,7 +243,7 @@ void showStatus(){
 		//pump R2[P0]
 		lcd.setCursor(0,1);
 		lcd.print("P");
-//		lcd.setCursor(1,1);
+		lcd.setCursor(0,1);
 //		lcd.print("-");
 		if(pumpOn){
 			lcd.blink();
