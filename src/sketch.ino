@@ -137,8 +137,6 @@ void setupLCD(){
 	lcd.begin(16,2);   // initialize the lcd for 16 chars 2 lines, turn on backlight
 	lcd.noBacklight();
 
-	lcd.createChar(0, smiley);
-  	lcd.write(byte(0));
 }
 
 /***************************************************
@@ -196,8 +194,10 @@ void setup()
 
 	//LED Monitor
    	pinMode(LED_PIN,OUTPUT);
+	
+	//waits few secs to be programmed without issues
 	digitalWrite(LED_PIN, HIGH);
-	delay(5000);//waits 5 secs to be programmed without issues
+	delay(5000);
 	digitalWrite(LED_PIN,LOW);
 
 	setupSystems();
@@ -226,14 +226,19 @@ void readSensors(){
  *  Description: print current status to lcd monitor
  ***************************************************/
 void showStatus(){
+		//moist R1[X0000]
 		lcd.setCursor(0,0); 
   		lcd.print("H");
 		lcd.setCursor(1,0);
 		lcd.print(moistSens);
 
-//		lcd.setCursor(0,1);
-//		lcd.print(counter++);
-	
+
+		//pump R2[P0]
+		lcd.setCursor(0,1);
+		lcd.print("P");
+		lcd.setCursor(1,1);
+		lcd.print("-");
+
 }
 
 void loop()
