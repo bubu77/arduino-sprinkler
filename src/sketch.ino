@@ -10,14 +10,14 @@
 #include <LCD.h>
 
 //STATUS LED, BUILT-IN
-#define LED_PIN 13
+#define LED_PIN 		13
 
 //how often we shoudl wake up? N ==> N*8s
-#define SLEEP_SCALER 8
+#define SLEEP_SCALER 		1//8 for prod env
 
-
-volatile int f_wdt=1;
-bool canSleep = true;
+//moisture sensor pins
+#define MOIST_PIN_POWER 	9
+#define MOIST_PIN_SENS 		0
 
 /****************************************************************
 I2C Addresses
@@ -26,8 +26,28 @@ I2C Addresses
 #define I2C_LCD_ADDR 0x27
 
 
+byte smiley[8] = {
+  B00000,
+  B10001,
+  B00000,
+  B00000,
+  B10001,
+  B01110,
+  B00000,
+};
+
+
 //I2C_LCD comm variable
 LiquidCrystal_I2C lcd(I2C_LCD_ADDR, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
+
+//sleep variables
+byte sleepCounter = SLEEP_SCALER;
+byte counter=1;
+bool canSleep = true;
+
+//sensors reading variables
+int moistSens=0;
+
 
 /***************************************************
  *  Name:        ISR(WDT_vect)
@@ -116,6 +136,21 @@ void ping(){
 void setupLCD(){
 	lcd.begin(16,2);   // initialize the lcd for 16 chars 2 lines, turn on backlight
 	lcd.noBacklight();
+
+	lcd.createChar(0, smiley);
+  	lcd.write(byte(0));
+}
+
+/***************************************************
+ *  Name:        setupSensors
+ *  Returns:     Nothing.
+ *  Parameters:  None.
+ *  Description: setup sensors
+ ***************************************************/
+void setupSensors(){
+	//moisture sensor
+	pinMode(MOIST_PIN_POWER, OUTPUT);
+        pinMode(MOIST_PIN_SENS, INPUT);
 }
 
 /***************************************************
@@ -133,6 +168,9 @@ void setupSystems(){
 
 	//LCD
 	setupLCD();
+
+	//SENSORS
+	setupSensors();
 }
 
 
@@ -164,38 +202,56 @@ void setup()
 
 	setupSystems();
 
-	log("setup done");
 	ping();
-	
 }
 
-byte sleepCounter = SLEEP_SCALER;
-byte counter=1;
+/***************************************************
+ *  Name:        showStatus
+ *  Returns:     Nothing.
+ *  Parameters:  msg to log.
+ *  Description: print current status to lcd monitor
+ ***************************************************/
+void readSensors(){
+
+        digitalWrite(MOIST_PIN_POWER, HIGH);
+	delay(200);
+	moistSens=analogRead(MOIST_PIN_SENS);
+        digitalWrite(MOIST_PIN_POWER, LOW);
+
+}
+/***************************************************
+ *  Name:        showStatus
+ *  Returns:     Nothing.
+ *  Parameters:  msg to log.
+ *  Description: print current status to lcd monitor
+ ***************************************************/
+void showStatus(){
+		lcd.setCursor(0,0); 
+  		lcd.print("H");
+		lcd.setCursor(1,0);
+		lcd.print(moistSens);
+
+//		lcd.setCursor(0,1);
+//		lcd.print(counter++);
+	
+}
 
 void loop()
 {
 
 	if(sleepCounter-- <1)	{
 		//this code is the loop working part
-
-		log("loop start");
 		ping();
 
-		lcd.display();
+		readSensors();
 
-		lcd.setCursor(0,0); 
-  		lcd.print("Current value: ");
-		lcd.setCursor(0,1);
-		lcd.print(counter++);
-	
+		lcd.display();
+		showStatus();
 		delay(1000);
 
+		//turn off display
 //		lcd.noDisplay();
-
-		log("loop end");
-
-
-
+		//reset sleep counter
 		sleepCounter=SLEEP_SCALER;
 	}
 
